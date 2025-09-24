@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  procurement-app:
+    build: .
+    container_name: procurement-app-standalone
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - procurement-network
+
+networks:
+  procurement-network:
+    driver: bridge
+    name: procurement-app-network
