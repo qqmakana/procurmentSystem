@@ -8,7 +8,7 @@ export interface Attachment {
   fileSize: number;
 }
 
-export type ApprovalStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+export type ApprovalStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected' | 'Pending Finance' | 'Pending COO' | 'Pending CFO' | 'Pending CEO';
 
 export interface Requisition {
   id: string;
@@ -29,6 +29,27 @@ export interface Requisition {
   attachments: Attachment[];
   createdAt: Date;
   updatedAt: Date;
+  autoSubmitted?: boolean;
+  approver?: string;
+  submissionDate?: Date;
+  approvalSteps?: ApprovalStep[];
+  currentApprovalStep?: number;
+}
+
+export interface ApprovalRule {
+  maxAmount: number;
+  approvers: string[];
+  title: string;
+  description: string;
+  autoSubmit: boolean;
+}
+
+export interface ApprovalStep {
+  approver: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  approvedAt?: Date;
+  rejectedAt?: Date;
+  comments?: string;
 }
 
 export interface TabProps {

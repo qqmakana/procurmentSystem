@@ -25,6 +25,9 @@ const App: React.FC = () => {
       attachments: [],
       createdAt: now,
       updatedAt: now,
+      autoSubmitted: false,
+      approver: undefined,
+      submissionDate: undefined
     };
   });
 
@@ -136,7 +139,11 @@ const App: React.FC = () => {
       'Draft': 'status-badge status-draft',
       'Submitted': 'status-badge status-submitted',
       'Approved': 'status-badge status-approved',
-      'Rejected': 'status-badge status-rejected'
+      'Rejected': 'status-badge status-rejected',
+      'Pending Finance': 'status-badge status-submitted',
+      'Pending COO': 'status-badge status-submitted',
+      'Pending CFO': 'status-badge status-submitted',
+      'Pending CEO': 'status-badge status-submitted'
     };
     return statusClasses[status as keyof typeof statusClasses] || 'status-badge status-draft';
   };
@@ -157,7 +164,7 @@ const App: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-4xl font-black text-white animate-fadeIn">
-                  Procurement Tracker
+                  DM Minerals Group
                 </h1>
                 <p className="text-white font-semibold text-lg animate-slideUp">Streamline your procurement workflow</p>
               </div>
@@ -167,8 +174,15 @@ const App: React.FC = () => {
                 <div className="text-sm text-white font-medium">Requisition ID</div>
                 <div className="font-mono font-bold text-white">{requisition.id}</div>
               </div>
-              <div className={`${getStatusBadge(requisition.approvalStatus)}`}>
-                {requisition.approvalStatus}
+              <div className="flex items-center space-x-3">
+                <div className={`${getStatusBadge(requisition.approvalStatus)}`}>
+                  {requisition.approvalStatus}
+                </div>
+                {requisition.autoSubmitted && (
+                  <div className="bg-white text-black px-3 py-1 rounded-full text-sm font-bold">
+                    Auto-Submitted to {requisition.approver}
+                  </div>
+                )}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -253,10 +267,10 @@ const App: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-white">Procurement Tracker</span>
+              <span className="text-lg font-bold text-white">DM Minerals Group</span>
             </div>
-            <p className="text-white font-medium mb-2">Built with React + TypeScript + Tailwind CSS</p>
-            <p className="text-sm text-white">All data is stored locally in your browser • Secure & Private</p>
+            <p className="text-white font-medium mb-2">DM Minerals Group Procurement System</p>
+            <p className="text-sm text-white">Secure & Private Procurement Management</p>
           </div>
         </div>
       </footer>

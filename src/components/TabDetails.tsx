@@ -1,5 +1,6 @@
 import React from 'react';
 import { TabProps } from '../types';
+import ApprovalRules from './ApprovalRules';
 
 const TabDetails: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
   const handleInputChange = (field: keyof typeof requisition, value: string | number) => {
@@ -18,6 +19,26 @@ const TabDetails: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
     }
     
     updateRequisition(updates);
+  };
+
+  const handleAutoSubmit = (approver: string) => {
+    // Determine the appropriate status based on amount
+    let status: string = 'Submitted';
+    
+    if (requisition.totalAmount <= 10000) {
+      status = 'Pending Finance';
+    } else if (requisition.totalAmount <= 50000) {
+      status = 'Pending COO';
+    } else {
+      status = 'Pending COO';
+    }
+
+    updateRequisition({
+      approvalStatus: status as any,
+      autoSubmitted: true,
+      approver: approver,
+      submissionDate: new Date()
+    });
   };
 
   return (
@@ -138,7 +159,7 @@ const TabDetails: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
             <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
             </svg>
           </div>
           <div>
@@ -163,7 +184,7 @@ const TabDetails: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
 
           <div>
             <label className="block text-sm font-semibold text-white mb-2">
-              Unit Price ($) *
+              Unit Price (R) *
             </label>
             <input
               type="number"
@@ -181,17 +202,28 @@ const TabDetails: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
               Total Amount
             </label>
             <div className="input-field bg-black text-white font-bold text-lg border-white">
-              ${requisition.totalAmount.toFixed(2)}
+              R{requisition.totalAmount.toFixed(2)}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Approval Rules Component */}
+      <ApprovalRules 
+        amount={requisition.totalAmount} 
+        onAutoSubmit={handleAutoSubmit}
+      />
+
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-400">
+        <div className="text-sm text-white">
           Status: <span className="font-semibold text-white">{requisition.approvalStatus}</span>
+          {requisition.autoSubmitted && (
+            <span className="ml-2 text-sm text-black bg-white px-2 py-1 rounded-full">
+              Auto-Submitted
+            </span>
+          )}
         </div>
-        <div className="space-x-3">
+        <div className="flex space-x-3">
           <button
             onClick={() => updateRequisition({ approvalStatus: 'Draft' })}
             className="btn-secondary"
