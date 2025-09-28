@@ -1,242 +1,274 @@
-import React from 'react';
-import { TabProps } from '../types';
-import ApprovalRules from './ApprovalRules';
+import React, { useState } from 'react';
+import { TabProps, LineItem } from '../types';
 
 const TabDetails: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
-  const handleInputChange = (field: keyof typeof requisition, value: string | number) => {
-    const updates: Partial<typeof requisition> = { [field]: value };
-    
-    // Handle date conversion
-    if (field === 'dateRequested' && typeof value === 'string') {
-      updates.dateRequested = new Date(value);
-    }
-    
-    // Auto-calculate total amount
-    if (field === 'quantity' || field === 'unitPrice') {
-      const quantity = field === 'quantity' ? value as number : requisition.quantity;
-      const unitPrice = field === 'unitPrice' ? value as number : requisition.unitPrice;
-      updates.totalAmount = quantity * unitPrice;
-    }
-    
-    updateRequisition(updates);
-  };
+  const [newLineItem, setNewLineItem] = useState<Partial<LineItem>>({
+    description: '',
+    quantity: 1,
+    unitPrice: 0
+  });
 
-  const handleAutoSubmit = (approver: string) => {
-    // Determine the appropriate status based on amount
-    let status: string = 'Submitted';
-    
-    if (requisition.totalAmount <= 10000) {
-      status = 'Pending Finance';
-    } else if (requisition.totalAmount <= 50000) {
-      status = 'Pending COO';
-    } else {
-      status = 'Pending COO';
-    }
-
+  const addLineItem = () => {
+    const testItem = {
+      id: `item-${Date.now()}`,
+      description: 'Test Item',
+      quantity: 1,
+      unitPrice: 100,
+      totalAmount: 100
+    };
     updateRequisition({
-      approvalStatus: status as any,
-      autoSubmitted: true,
-      approver: approver,
-      submissionDate: new Date()
+      lineItems: [...requisition.lineItems, testItem],
+      totalAmount: requisition.totalAmount + 100
     });
   };
 
   return (
-    <div className="space-y-8">
-      <div className="bg-black border-2 border-white rounded-2xl p-4 shadow-2xl animate-fadeIn relative overflow-hidden">
-        <div className="relative z-10">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-xl animate-float relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-transparent"></div>
-              <svg className="w-5 h-5 text-black relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+    <div style={{ padding: '20px', backgroundColor: 'black', color: 'white', minHeight: '100vh' }}>
+      {/* HUGE OBVIOUS TEST */}
+      <div style={{ 
+        backgroundColor: 'red', 
+        color: 'white', 
+        padding: '20px', 
+        margin: '20px 0',
+        textAlign: 'center',
+        fontSize: '24px',
+        fontWeight: 'bold'
+      }}>
+        🚨 TABDETAILS IS WORKING! 🚨
+      </div>
+
+      {/* HUGE ADD ITEM BUTTON */}
+      <div style={{ 
+        backgroundColor: 'yellow', 
+        color: 'black', 
+        padding: '30px', 
+        margin: '20px 0',
+        textAlign: 'center',
+        borderRadius: '15px'
+      }}>
+        <h2 style={{ fontSize: '32px', marginBottom: '20px' }}>
+          🛒 ADD ITEM BUTTON
+        </h2>
+        <button 
+          onClick={addLineItem}
+          style={{
+            backgroundColor: 'white',
+            color: 'black',
+            padding: '25px 50px',
+            fontSize: '28px',
+            border: 'none',
+            borderRadius: '15px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+          }}
+        >
+          🛒 ADD NEW ITEM
+        </button>
+        <p style={{ marginTop: '20px', fontSize: '20px' }}>
+          Click this button to add a test item to your requisition
+        </p>
+      </div>
+
+      {/* CURRENT LINE ITEMS */}
+      {requisition.lineItems.length > 0 && (
+        <div style={{ 
+          backgroundColor: 'green', 
+          color: 'white', 
+          padding: '20px', 
+          margin: '20px 0',
+          borderRadius: '10px'
+        }}>
+          <h3 style={{ fontSize: '24px', marginBottom: '15px' }}>
+            Current Line Items ({requisition.lineItems.length})
+          </h3>
+          {requisition.lineItems.map((item, index) => (
+            <div key={item.id} style={{ 
+              backgroundColor: 'white', 
+              color: 'black', 
+              padding: '15px', 
+              margin: '10px 0',
+              borderRadius: '8px'
+            }}>
+              <p><strong>Item {index + 1}:</strong> {item.description}</p>
+              <p>Quantity: {item.quantity} | Price: R{item.unitPrice} | Total: R{item.totalAmount}</p>
             </div>
-            <div>
-              <h3 className="text-xl font-black text-white animate-slideUp">Requisition Details</h3>
-              <p className="text-white font-semibold text-sm animate-fadeIn">
-                Complete all required information for your procurement request
-              </p>
-            </div>
-          </div>
-          <div className="bg-black rounded-xl p-3 border border-white">
-            <p className="text-white text-sm font-semibold leading-relaxed">
-              ✨ Once submitted, this requisition will be sent for approval and the PO/Invoice tabs will become available.
-            </p>
-          </div>
+          ))}
+          <p style={{ fontSize: '20px', fontWeight: 'bold', marginTop: '15px' }}>
+            Total Amount: R{requisition.totalAmount}
+          </p>
+        </div>
+      )}
+
+      {/* BASIC FORM */}
+      <div style={{ 
+        backgroundColor: 'black', 
+        border: '2px solid white', 
+        padding: '20px', 
+        margin: '20px 0',
+        borderRadius: '10px'
+      }}>
+        <h3 style={{ fontSize: '24px', marginBottom: '15px' }}>Requisition Details</h3>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Title:
+          </label>
+          <input
+            type="text"
+            value={requisition.title}
+            onChange={(e) => updateRequisition({ title: e.target.value })}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'black',
+              color: 'white',
+              border: '1px solid white',
+              borderRadius: '5px'
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Requester:
+          </label>
+          <input
+            type="text"
+            value={requisition.requester}
+            onChange={(e) => updateRequisition({ requester: e.target.value })}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'black',
+              color: 'white',
+              border: '1px solid white',
+              borderRadius: '5px'
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Justification:
+          </label>
+          <textarea
+            value={requisition.justification}
+            onChange={(e) => updateRequisition({ justification: e.target.value })}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'black',
+              color: 'white',
+              border: '1px solid white',
+              borderRadius: '5px',
+              height: '80px'
+            }}
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">
-              Requisition Title *
-            </label>
-            <input
-              type="text"
-              value={requisition.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              className="input-field"
-              placeholder="e.g., Office Supplies for Q1 2025"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">
-              Requester Name *
-            </label>
-            <input
-              type="text"
-              value={requisition.requester}
-              onChange={(e) => handleInputChange('requester', e.target.value)}
-              className="input-field"
-              placeholder="Your full name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-white mb-1">
-              Department *
-            </label>
-            <select
-              value={requisition.department}
-              onChange={(e) => handleInputChange('department', e.target.value)}
-              className="input-field"
-            >
-              <option value="">Select Department</option>
-              <option value="Finance">Finance</option>
-              <option value="HR">Human Resources</option>
-              <option value="IT">Information Technology</option>
-              <option value="Operations">Operations</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Sales">Sales</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Request Date *
-            </label>
-            <input
-              type="date"
-              value={requisition.dateRequested.toISOString().split('T')[0]}
-              onChange={(e) => handleInputChange('dateRequested', e.target.value)}
-              className="input-field"
-            />
-          </div>
+      {/* LINE ITEMS FORM */}
+      <div style={{ 
+        backgroundColor: 'blue', 
+        color: 'white', 
+        padding: '20px', 
+        margin: '20px 0',
+        borderRadius: '10px'
+      }}>
+        <h3 style={{ fontSize: '24px', marginBottom: '15px' }}>Add Line Item</h3>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Description:
+          </label>
+          <input
+            type="text"
+            value={newLineItem.description || ''}
+            onChange={(e) => setNewLineItem({...newLineItem, description: e.target.value})}
+            style={{
+              width: '100%',
+              padding: '10px',
+              backgroundColor: 'white',
+              color: 'black',
+              border: '1px solid #ccc',
+              borderRadius: '5px'
+            }}
+            placeholder="Item description..."
+          />
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Item Description *
-            </label>
-            <textarea
-              value={requisition.itemDescription}
-              onChange={(e) => handleInputChange('itemDescription', e.target.value)}
-              className="input-field h-24 resize-none"
-              placeholder="Detailed description of items needed..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Justification *
-            </label>
-            <textarea
-              value={requisition.justification}
-              onChange={(e) => handleInputChange('justification', e.target.value)}
-              className="input-field h-24 resize-none"
-              placeholder="Why is this purchase necessary?"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-black border border-white rounded-2xl p-4 shadow-lg">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-            </svg>
-          </div>
-          <div>
-            <h4 className="text-lg font-bold text-white">Cost Information</h4>
-            <p className="text-white font-medium text-sm">Enter quantity and unit price for automatic calculation</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">
-              Quantity *
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Quantity:
             </label>
             <input
               type="number"
-              min="1"
-              value={requisition.quantity}
-              onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 0)}
-              className="input-field"
-              placeholder="1"
+              value={newLineItem.quantity || ''}
+              onChange={(e) => setNewLineItem({...newLineItem, quantity: parseInt(e.target.value) || 1})}
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: 'white',
+                color: 'black',
+                border: '1px solid #ccc',
+                borderRadius: '5px'
+              }}
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">
-              Unit Price (R) *
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Unit Price:
             </label>
             <input
               type="number"
-              min="0"
-              step="0.01"
-              value={requisition.unitPrice}
-              onChange={(e) => handleInputChange('unitPrice', parseFloat(e.target.value) || 0)}
-              className="input-field"
-              placeholder="0.00"
+              value={newLineItem.unitPrice || ''}
+              onChange={(e) => setNewLineItem({...newLineItem, unitPrice: parseFloat(e.target.value) || 0})}
+              style={{
+                width: '100%',
+                padding: '10px',
+                backgroundColor: 'white',
+                color: 'black',
+                border: '1px solid #ccc',
+                borderRadius: '5px'
+              }}
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-white mb-2">
-              Total Amount
-            </label>
-            <div className="input-field bg-black text-white font-bold text-lg border-white">
-              R{requisition.totalAmount.toFixed(2)}
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* Approval Rules Component */}
-      <ApprovalRules 
-        amount={requisition.totalAmount} 
-        onAutoSubmit={handleAutoSubmit}
-      />
-
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-white">
-          Status: <span className="font-semibold text-white">{requisition.approvalStatus}</span>
-          {requisition.autoSubmitted && (
-            <span className="ml-2 text-sm text-black bg-white px-2 py-1 rounded-full">
-              Auto-Submitted
-            </span>
-          )}
-        </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => updateRequisition({ approvalStatus: 'Draft' })}
-            className="btn-secondary"
-          >
-            Save as Draft
-          </button>
-          <button
-            onClick={() => updateRequisition({ approvalStatus: 'Submitted' })}
-            className="btn-primary"
-          >
-            Submit for Approval
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            if (!newLineItem.description || !newLineItem.quantity || !newLineItem.unitPrice) {
+              alert('Please fill in all fields');
+              return;
+            }
+            const lineItem = {
+              id: `item-${Date.now()}`,
+              description: newLineItem.description!,
+              quantity: newLineItem.quantity!,
+              unitPrice: newLineItem.unitPrice!,
+              totalAmount: newLineItem.quantity! * newLineItem.unitPrice!
+            };
+            updateRequisition({
+              lineItems: [...requisition.lineItems, lineItem],
+              totalAmount: requisition.totalAmount + lineItem.totalAmount
+            });
+            setNewLineItem({ description: '', quantity: 1, unitPrice: 0 });
+          }}
+          style={{
+            backgroundColor: 'white',
+            color: 'black',
+            padding: '15px 30px',
+            fontSize: '18px',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          ➕ Add Item
+        </button>
       </div>
     </div>
   );

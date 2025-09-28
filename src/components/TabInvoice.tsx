@@ -1,6 +1,7 @@
 import React from 'react';
 import { TabProps } from '../types';
 import FileUpload from '../FileUpload';
+import DatePicker from './DatePicker';
 
 const TabInvoice: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
   const handleFileUpload = (attachment: any) => {
@@ -39,14 +40,12 @@ const TabInvoice: React.FC<TabProps> = ({ requisition, updateRequisition }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Invoice Received Date *
-            </label>
-            <input
-              type="date"
-              value={requisition.invoiceReceivedDate ? requisition.invoiceReceivedDate.toISOString().split('T')[0] : ''}
-              onChange={(e) => handleInvoiceUpdate('invoiceReceivedDate', new Date(e.target.value))}
-              className="input-field"
+            <DatePicker
+              label="Invoice Received Date"
+              value={requisition.invoiceReceivedDate || null}
+              onChange={(date) => handleInvoiceUpdate('invoiceReceivedDate', date)}
+              placeholder="Select invoice received date"
+              required
             />
           </div>
         </div>

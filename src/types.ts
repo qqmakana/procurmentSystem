@@ -8,7 +8,15 @@ export interface Attachment {
   fileSize: number;
 }
 
-export type ApprovalStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected' | 'Pending Finance' | 'Pending COO' | 'Pending CFO' | 'Pending CEO';
+export type ApprovalStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected' | 'Pending Finance' | 'Pending COO' | 'Pending CFO' | 'Pending CEO' | 'Pending Documents';
+
+export interface LineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+}
 
 export interface Requisition {
   id: string;
@@ -17,9 +25,7 @@ export interface Requisition {
   department: string;
   dateRequested: Date;
   justification: string;
-  itemDescription: string;
-  quantity: number;
-  unitPrice: number;
+  lineItems: LineItem[];
   totalAmount: number;
   approvalStatus: ApprovalStatus;
   poNumber?: string;
