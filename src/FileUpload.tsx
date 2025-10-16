@@ -50,8 +50,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, fileType, uploade
 
   return (
     <div
-      className={`file-upload-area ${
-        isDragging ? 'file-upload-dragging' : ''
+      className={`border-2 border-dashed rounded-xl p-6 transition-all ${
+        isDragging 
+          ? 'border-white bg-white/10 scale-105' 
+          : 'border-white/30 bg-white/5 hover:border-white hover:bg-white/10'
       }`}
       onDragOver={(e) => {
         e.preventDefault();
@@ -64,12 +66,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, fileType, uploade
         <div className="flex justify-center">
           <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
             isDragging 
-              ? 'bg-blue-100 shadow-lg scale-110' 
-              : 'bg-gray-100 hover:bg-blue-50'
+              ? 'bg-white shadow-lg scale-110' 
+              : 'bg-white/20 hover:bg-white/30'
           }`}>
             <svg
               className={`w-8 h-8 transition-colors duration-300 ${
-                isDragging ? 'text-blue-600' : 'text-gray-400'
+                isDragging ? 'text-black' : 'text-white'
               }`}
               stroke="currentColor"
               fill="none"
@@ -86,25 +88,25 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, fileType, uploade
         </div>
         
         <div className="text-center">
-          <div className="text-lg font-semibold text-gray-900 mb-2">
-            <label htmlFor="file-upload" className="cursor-pointer">
-              <span className="text-blue-600 hover:text-blue-700 transition-colors duration-200">
+          <label htmlFor={`file-upload-${fileType}`} className="cursor-pointer">
+            <div className="text-lg font-semibold text-white mb-2">
+              <span className="text-white hover:text-gray-300 transition-colors duration-200 underline">
                 Click to upload
               </span>{' '}
-              or drag and drop
-            </label>
-            <input
-              id="file-upload"
-              name="file-upload"
-              type="file"
-              className="sr-only"
-              onChange={handleFileInput}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
-            />
-          </div>
-          <p className="text-sm text-gray-500 font-medium">
-            PDF, DOC, DOCX, JPG, PNG files up to 10MB
-          </p>
+              <span className="text-gray-300">or drag and drop</span>
+            </div>
+            <p className="text-sm text-gray-400 font-medium">
+              PDF, DOC, DOCX, JPG, PNG files up to 10MB
+            </p>
+          </label>
+          <input
+            id={`file-upload-${fileType}`}
+            name={`file-upload-${fileType}`}
+            type="file"
+            className="sr-only"
+            onChange={handleFileInput}
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+          />
         </div>
       </div>
     </div>

@@ -220,17 +220,6 @@ const AuthSystem: React.FC<AuthSystemProps> = ({ onLogin, onLogout, currentUser 
                 Login
               </button>
             </form>
-
-            <div className="mt-4 text-center">
-              <p className="text-white/70 text-sm">
-                Demo accounts:<br/>
-                <strong>solarcouple@gmail.com / q (Admin)</strong><br/>
-                lebone@company.com / password123 (Finance)<br/>
-                sabelo.msiza@company.com / password123 (COO)<br/>
-                joan@company.com / password123 (CFO)<br/>
-                doctor.motswadiri@company.com / password123 (CEO)
-              </p>
-            </div>
           </div>
         </div>
       )}

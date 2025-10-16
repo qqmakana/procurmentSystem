@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import TabDetails from './components/TabDetails';
 import TabInvoice from './components/TabInvoice';
 import TabPO from './components/TabPO';
-import TabDocuments from './components/TabDocuments';
-import ApprovalWorkflow from './components/ApprovalWorkflow';
-import UserManagement from './components/UserManagement';
-import SubmissionWorkflow from './components/SubmissionWorkflow';
 import ApprovalQueue from './components/ApprovalQueue';
 import AuthSystem from './components/AuthSystem';
 import NotificationSystem from './components/NotificationSystem';
@@ -33,7 +29,7 @@ const App: React.FC = () => {
     };
   });
 
-  const [activeTab, setActiveTab] = useState<'details' | 'invoice' | 'po' | 'documents' | 'approval' | 'users' | 'submit' | 'queue'>('details');
+  const [activeTab, setActiveTab] = useState<'create' | 'invoice' | 'po' | 'approval' | 'all-requisitions'>('create');
   
   // Authentication state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -49,35 +45,6 @@ const App: React.FC = () => {
     priority: 'low' | 'medium' | 'high';
   }>>([]);
   
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 'user-1',
-      name: 'John Doe',
-      email: 'john.doe@company.com',
-      role: 'Requester',
-      department: 'IT',
-      isActive: true,
-      permissions: ['create_requisition', 'view_own_requisitions']
-    },
-    {
-      id: 'user-2',
-      name: 'Jane Smith',
-      email: 'jane.smith@company.com',
-      role: 'Finance',
-      department: 'Finance',
-      isActive: true,
-      permissions: ['approve_finance', 'view_all_requisitions']
-    },
-    {
-      id: 'user-3',
-      name: 'Mike Johnson',
-      email: 'mike.johnson@company.com',
-      role: 'CEO',
-      department: 'Executive',
-      isActive: true,
-      permissions: ['approve_all', 'admin_access']
-    }
-  ]);
   
   const [, setSecurityLogs] = useState<SecurityLog[]>([]);
 
@@ -148,8 +115,8 @@ const App: React.FC = () => {
   };
 
   const handleViewRequisition = (_requisitionId: string) => {
-    // Switch to queue tab and highlight the requisition
-    setActiveTab('queue');
+    // Switch to approval tab and highlight the requisition
+    setActiveTab('approval');
     // In real app, you'd scroll to or highlight the specific requisition
   };
   
@@ -261,7 +228,7 @@ const App: React.FC = () => {
 
   const resetRequisition = () => {
     const now = new Date();
-    setRequisition({
+    const newReq: Requisition = {
       id: `REQ-${Date.now()}`,
       title: '',
       requester: '',
@@ -270,76 +237,120 @@ const App: React.FC = () => {
       justification: '',
       lineItems: [],
       totalAmount: 0,
-      approvalStatus: 'Draft',
+      approvalStatus: 'Draft' as const,
       attachments: [],
       createdAt: now,
       updatedAt: now,
       autoSubmitted: false,
       approver: undefined,
       submissionDate: undefined
-    });
+    };
+    setRequisition(newReq);
+    // Clear from localStorage immediately
+    localStorage.setItem('procurement-requisition', JSON.stringify(newReq));
   };
 
   const exportData = () => {
-    const dataStr = JSON.stringify(requisition, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `requisition-${requisition.id}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    try {
+      const dataStr = JSON.stringify(requisition, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `requisition-${requisition.id}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      addNotification({
+        type: 'system',
+        title: 'Export Successful',
+        message: `Requisition ${requisition.id} has been exported successfully.`,
+        priority: 'low'
+      });
+    } catch (error) {
+      alert('Error exporting data. Please try again.');
+      console.error('Export error:', error);
+    }
   };
 
   const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const imported = JSON.parse(e.target?.result as string);
-          
-          // Migration: Ensure lineItems exists and handle old structure
-          if (!imported.lineItems) {
-            imported.lineItems = [];
-            // If we have old single item structure, convert it
-            if (imported.itemDescription && imported.quantity && imported.unitPrice) {
-              imported.lineItems = [{
-                id: `item-${Date.now()}`,
-                description: imported.itemDescription,
-                quantity: imported.quantity,
-                unitPrice: imported.unitPrice,
-                totalAmount: imported.quantity * imported.unitPrice
-              }];
-              // Remove old fields
-              delete imported.itemDescription;
-              delete imported.quantity;
-              delete imported.unitPrice;
-            }
-          }
-          
-          // Convert date strings back to Date objects
-          if (imported.dateRequested) {
-            imported.dateRequested = new Date(imported.dateRequested);
-          }
-          if (imported.createdAt) {
-            imported.createdAt = new Date(imported.createdAt);
-          }
-          if (imported.updatedAt) {
-            imported.updatedAt = new Date(imported.updatedAt);
-          }
-          if (imported.submissionDate) {
-            imported.submissionDate = new Date(imported.submissionDate);
-          }
-          
-          setRequisition(imported);
-          logSecurityEvent('import_requisition', `Imported requisition ${imported.id}`);
-        } catch (error) {
-          alert('Error importing file. Please check the file format.');
-        }
-      };
-      reader.readAsText(file);
+    
+    if (!file) {
+      return;
     }
+    
+    // Validate file type
+    if (!file.name.endsWith('.json')) {
+      alert('Please select a valid JSON file');
+      event.target.value = ''; // Reset the input
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target?.result as string);
+        
+        // Migration: Ensure lineItems exists and handle old structure
+        if (!imported.lineItems) {
+          imported.lineItems = [];
+          // If we have old single item structure, convert it
+          if (imported.itemDescription && imported.quantity && imported.unitPrice) {
+            imported.lineItems = [{
+              id: `item-${Date.now()}`,
+              description: imported.itemDescription,
+              quantity: imported.quantity,
+              unitPrice: imported.unitPrice,
+              totalAmount: imported.quantity * imported.unitPrice
+            }];
+            // Remove old fields
+            delete imported.itemDescription;
+            delete imported.quantity;
+            delete imported.unitPrice;
+          }
+        }
+        
+        // Convert date strings back to Date objects
+        if (imported.dateRequested) {
+          imported.dateRequested = new Date(imported.dateRequested);
+        }
+        if (imported.createdAt) {
+          imported.createdAt = new Date(imported.createdAt);
+        }
+        if (imported.updatedAt) {
+          imported.updatedAt = new Date(imported.updatedAt);
+        }
+        if (imported.submissionDate) {
+          imported.submissionDate = new Date(imported.submissionDate);
+        }
+        
+        setRequisition(imported);
+        logSecurityEvent('import_requisition', `Imported requisition ${imported.id}`);
+        
+        addNotification({
+          type: 'system',
+          title: 'Import Successful',
+          message: `Requisition ${imported.id} has been imported successfully.`,
+          priority: 'low'
+        });
+      } catch (error) {
+        alert('Error importing file. Please ensure the file is a valid requisition JSON file.');
+        console.error('Import error:', error);
+      }
+      
+      // Reset the input so the same file can be imported again if needed
+      event.target.value = '';
+    };
+    
+    reader.onerror = () => {
+      alert('Error reading file. Please try again.');
+      event.target.value = '';
+    };
+    
+    reader.readAsText(file);
   };
 
   // Professional functions
@@ -356,49 +367,7 @@ const App: React.FC = () => {
     setSecurityLogs(prev => [...prev, log]);
   };
 
-  const handleApprovalAction = (stepId: string, action: 'approve' | 'reject' | 'skip', comments?: string) => {
-    // Update approval step
-    const updatedSteps = requisition.approvalSteps?.map(step => 
-      step.id === stepId 
-        ? { 
-            ...step, 
-            status: (action === 'approve' ? 'Approved' : action === 'reject' ? 'Rejected' : 'Skipped') as 'Approved' | 'Rejected' | 'Skipped' | 'Pending',
-            [action === 'approve' ? 'approvedAt' : action === 'reject' ? 'rejectedAt' : 'approvedAt']: new Date(),
-            comments: comments || step.comments
-          }
-        : step
-    ) || [];
 
-    updateRequisition({
-      approvalSteps: updatedSteps,
-      approvalStatus: action === 'reject' ? 'Rejected' : 
-                    updatedSteps.every(s => s.status === 'Approved' || s.status === 'Skipped') ? 'Approved' :
-                    'Under Review'
-    });
-
-    logSecurityEvent(`approval_${action}`, `Step ${stepId} ${action}ed by ${currentUser?.name || 'unknown'}`);
-  };
-
-  const handleUserManagement = {
-    addUser: (user: Omit<User, 'id'>) => {
-      const newUser: User = {
-        ...user,
-        id: `user-${Date.now()}`
-      };
-      setUsers(prev => [...prev, newUser]);
-      logSecurityEvent('add_user', `Added user ${newUser.name}`);
-    },
-    updateUser: (id: string, updates: Partial<User>) => {
-      setUsers(prev => prev.map(user => 
-        user.id === id ? { ...user, ...updates } : user
-      ));
-      logSecurityEvent('update_user', `Updated user ${id}`);
-    },
-    deleteUser: (id: string) => {
-      setUsers(prev => prev.filter(user => user.id !== id));
-      logSecurityEvent('delete_user', `Deleted user ${id}`);
-    }
-  };
 
   const tabProps = {
     requisition,
@@ -444,10 +413,29 @@ const App: React.FC = () => {
                         />
                       </label>
                       <button
-                        onClick={resetRequisition}
+                        onClick={() => {
+                          if (window.confirm('⚠️ CLEAR ALL DATA?\n\nThis will delete the current requisition and create a fresh form. This cannot be undone!')) {
+                            // Clear localStorage completely
+                            localStorage.removeItem('procurement-requisition');
+                            // Reset to new requisition
+                            resetRequisition();
+                            // Reload page to ensure clean state
+                            window.location.reload();
+                          }
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors border-2 border-white"
+                      >
+                        🗑️ Clear All
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm('Create new requisition? Current data will be saved.')) {
+                            resetRequisition();
+                          }
+                        }}
                         className="bg-white hover:bg-gray-300 text-black font-bold py-2 px-4 rounded-lg transition-colors border-2 border-white"
                       >
-                        🔄 Reset
+                        ➕ New
                       </button>
                     </div>
                   </>
@@ -472,58 +460,14 @@ const App: React.FC = () => {
           {/* Navigation Tabs */}
           <div className="flex flex-wrap border-b-2 border-white">
             <button
-              onClick={() => setActiveTab('details')}
+              onClick={() => setActiveTab('create')}
               className={`px-4 py-3 font-medium transition-colors text-sm ${
-                activeTab === 'details'
+                activeTab === 'create'
                   ? 'text-white border-b-2 border-white bg-gray-800'
                   : 'text-gray-400 hover:text-white hover:bg-gray-900'
               }`}
             >
-              📋 Details
-            </button>
-            <button
-              onClick={() => setActiveTab('documents')}
-              className={`px-4 py-3 font-medium transition-colors text-sm ${
-                activeTab === 'documents'
-                  ? 'text-white border-b-2 border-white bg-gray-800'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-900'
-              }`}
-            >
-              📁 Documents
-            </button>
-            <button
-              onClick={() => setActiveTab('submit')}
-              className={`px-4 py-3 font-medium transition-colors text-sm ${
-                activeTab === 'submit'
-                  ? 'text-white border-b-2 border-white bg-gray-800'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-900'
-              }`}
-            >
-              📤 Submit
-            </button>
-            <button
-              onClick={() => setActiveTab('queue')}
-              className={`px-4 py-3 font-medium transition-colors text-sm relative ${
-                activeTab === 'queue'
-                  ? 'text-white border-b-2 border-white bg-gray-800'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-900'
-              }`}
-            >
-              📋 Queue
-              {currentUser && (() => {
-                const myPending = allRequisitions.filter(req => 
-                  req.approvalSteps?.some(step => 
-                    step.status === 'Pending' && 
-                    step.approver === currentUser.name &&
-                    (step.level === currentUser.role || currentUser.role === 'Admin')
-                  )
-                ).length;
-                return myPending > 0 ? (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                    {myPending}
-                  </span>
-                ) : null;
-              })()}
+              ➕ Create Requisition
             </button>
             <button
               onClick={() => setActiveTab('approval')}
@@ -533,7 +477,7 @@ const App: React.FC = () => {
                   : 'text-gray-400 hover:text-white hover:bg-gray-900'
               }`}
             >
-              ✅ Approval
+              ✅ Approvals
             </button>
             <button
               onClick={() => setActiveTab('invoice')}
@@ -557,14 +501,14 @@ const App: React.FC = () => {
             </button>
             {currentUser?.role === 'Admin' && (
               <button
-                onClick={() => setActiveTab('users')}
+                onClick={() => setActiveTab('all-requisitions')}
                 className={`px-4 py-3 font-medium transition-colors text-sm ${
-                  activeTab === 'users'
+                  activeTab === 'all-requisitions'
                     ? 'text-white border-b-2 border-white bg-gray-800'
                     : 'text-gray-400 hover:text-white hover:bg-gray-900'
                 }`}
               >
-                👥 Users
+                📊 All Requisitions
               </button>
             )}
           </div>
@@ -587,10 +531,8 @@ const App: React.FC = () => {
               </div>
             ) : (
               <>
-                {activeTab === 'details' && <TabDetails {...tabProps} />}
-                {activeTab === 'documents' && <TabDocuments {...tabProps} />}
-                {activeTab === 'submit' && <SubmissionWorkflow {...tabProps} />}
-                {activeTab === 'queue' && (
+                {activeTab === 'create' && <TabDetails {...tabProps} onResetForm={resetRequisition} />}
+                {activeTab === 'approval' && (
                   <ApprovalQueue
                     currentUser={currentUser}
                     requisitions={allRequisitions}
@@ -622,25 +564,151 @@ const App: React.FC = () => {
                     }}
                   />
                 )}
-                {activeTab === 'approval' && (
-                  <ApprovalWorkflow
-                    steps={requisition.approvalSteps || []}
-                    currentUser={currentUser}
-                    onApprove={(stepId, comments) => handleApprovalAction(stepId, 'approve', comments)}
-                    onReject={(stepId, comments) => handleApprovalAction(stepId, 'reject', comments)}
-                    onSkip={(stepId, comments) => handleApprovalAction(stepId, 'skip', comments)}
-                  />
-                )}
                 {activeTab === 'invoice' && <TabInvoice {...tabProps} />}
                 {activeTab === 'po' && <TabPO {...tabProps} />}
-                {activeTab === 'users' && currentUser.role === 'Admin' && (
-                  <UserManagement
-                    users={users}
-                    currentUser={currentUser}
-                    onAddUser={handleUserManagement.addUser}
-                    onUpdateUser={handleUserManagement.updateUser}
-                    onDeleteUser={handleUserManagement.deleteUser}
-                  />
+                {activeTab === 'all-requisitions' && currentUser?.role === 'Admin' && (
+                  <div className="space-y-6">
+                    <div className="bg-gray-900 border-2 border-white rounded-xl p-6 text-white">
+                      <h2 className="text-3xl font-bold mb-2">📊 All Requisitions</h2>
+                      <p className="text-gray-400">View and analyze all submitted requisitions</p>
+                    </div>
+
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-gray-900 border-2 border-white rounded-xl p-6 text-center">
+                        <div className="text-4xl font-bold text-white mb-2">{allRequisitions.length}</div>
+                        <div className="text-gray-400 text-sm">Total Requisitions</div>
+                      </div>
+                      <div className="bg-gray-900 border-2 border-white rounded-xl p-6 text-center">
+                        <div className="text-4xl font-bold text-green-400 mb-2">
+                          {allRequisitions.filter(r => r.approvalStatus === 'Approved').length}
+                        </div>
+                        <div className="text-gray-400 text-sm">Approved</div>
+                      </div>
+                      <div className="bg-gray-900 border-2 border-white rounded-xl p-6 text-center">
+                        <div className="text-4xl font-bold text-yellow-400 mb-2">
+                          {allRequisitions.filter(r => r.approvalStatus?.includes('Pending')).length}
+                        </div>
+                        <div className="text-gray-400 text-sm">Pending</div>
+                      </div>
+                      <div className="bg-gray-900 border-2 border-white rounded-xl p-6 text-center">
+                        <div className="text-4xl font-bold text-white mb-2">
+                          R{allRequisitions.reduce((sum, r) => sum + r.totalAmount, 0).toLocaleString()}
+                        </div>
+                        <div className="text-gray-400 text-sm">Total Value</div>
+                      </div>
+                    </div>
+
+                    {/* Requisitions List */}
+                    <div className="space-y-4">
+                      {allRequisitions.map((req) => (
+                        <div key={req.id} className="bg-gray-900 border-2 border-white rounded-xl p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-xl font-bold text-white mb-1">{req.title || 'Untitled Requisition'}</h3>
+                              <p className="text-gray-400 text-sm">
+                                ID: {req.id} | Requester: {req.requester} | Department: {req.department}
+                              </p>
+                              <p className="text-gray-400 text-sm">
+                                Submitted: {req.submissionDate?.toLocaleDateString() || 'Not submitted'}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-white mb-1">
+                                R{req.totalAmount.toLocaleString()}
+                              </div>
+                              <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                req.approvalStatus === 'Approved' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                                req.approvalStatus === 'Rejected' ? 'bg-red-500/20 text-red-300 border border-red-500/30' :
+                                req.approvalStatus === 'Draft' ? 'bg-gray-500/20 text-gray-300 border border-gray-500/30' :
+                                'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                              }`}>
+                                {req.approvalStatus}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Line Items */}
+                          <div className="bg-white/5 rounded-lg p-4 mb-4">
+                            <h4 className="text-white font-semibold mb-3">📦 Line Items ({req.lineItems.length})</h4>
+                            <div className="space-y-2">
+                              {req.lineItems.map((item, idx) => (
+                                <div key={item.id} className="flex justify-between items-center bg-white/5 rounded p-3">
+                                  <div className="flex items-center space-x-3">
+                                    <span className="bg-white/20 text-white px-2 py-1 rounded text-xs font-medium">
+                                      #{idx + 1}
+                                    </span>
+                                    <div>
+                                      <p className="text-white font-medium">{item.description}</p>
+                                      <p className="text-gray-400 text-xs">
+                                        Qty: {item.quantity} × R{item.unitPrice.toLocaleString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-white font-bold">
+                                    R{item.totalAmount.toLocaleString()}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Approval Steps */}
+                          {req.approvalSteps && req.approvalSteps.length > 0 && (
+                            <div className="bg-white/5 rounded-lg p-4">
+                              <h4 className="text-white font-semibold mb-3">✅ Approval Progress</h4>
+                              <div className="space-y-2">
+                                {req.approvalSteps.map((step) => (
+                                  <div key={step.id} className="flex justify-between items-center bg-white/5 rounded p-3">
+                                    <div className="flex items-center space-x-3">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                        step.status === 'Approved' ? 'bg-green-500/20 text-green-300' :
+                                        step.status === 'Rejected' ? 'bg-red-500/20 text-red-300' :
+                                        step.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                                        'bg-gray-500/20 text-gray-300'
+                                      }`}>
+                                        {step.status === 'Approved' ? '✓' :
+                                         step.status === 'Rejected' ? '✗' :
+                                         step.status === 'Pending' ? '⏳' : '○'}
+                                      </div>
+                                      <div>
+                                        <p className="text-white font-medium">{step.approver} ({step.level})</p>
+                                        <p className="text-gray-400 text-xs">{step.approverEmail}</p>
+                                      </div>
+                                    </div>
+                                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                      step.status === 'Approved' ? 'bg-green-500/20 text-green-300' :
+                                      step.status === 'Rejected' ? 'bg-red-500/20 text-red-300' :
+                                      step.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                                      'bg-gray-500/20 text-gray-300'
+                                    }`}>
+                                      {step.status}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Justification */}
+                          {req.justification && (
+                            <div className="mt-4 bg-white/5 rounded-lg p-4">
+                              <h4 className="text-white font-semibold mb-2">📝 Justification</h4>
+                              <p className="text-gray-300 text-sm">{req.justification}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {allRequisitions.length === 0 && (
+                        <div className="bg-gray-900 border-2 border-white rounded-xl p-12 text-center">
+                          <div className="text-6xl mb-4">📊</div>
+                          <h3 className="text-2xl font-bold text-white mb-2">No Requisitions Yet</h3>
+                          <p className="text-gray-400">Requisitions will appear here once users submit them</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </>
             )}
