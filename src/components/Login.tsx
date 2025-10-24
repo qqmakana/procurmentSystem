@@ -10,12 +10,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // ⚠️ TESTING MODE - Set to false for production
+  const TESTING_MODE = true;
+
   const users = [
-    { email: 'solarcouple@gmail.com', password: '123', name: 'Solar Couple' },
-    { email: 'joan@dm-mineralsgroup.com', password: '123', name: 'Joan Rinomhota' },
-    { email: 'sabelo@dm-mineralsgroup.com', password: '123', name: 'Sabelo Msiza' },
-    { email: 'lebone@dm-mineralsgroup.com', password: '123', name: 'Lebone Marule' },
-    { email: 'doctor@dm-mineralsgroup.com', password: '123', name: 'Doctor Motswadiri' },
+    // Approvers
+    { email: 'solarcouple@gmail.com', password: '123', name: 'Solar Couple', role: 'Admin' },
+    { email: 'joan@dm-mineralsgroup.com', password: '123', name: 'Joan Rinomhota', role: 'CFO' },
+    { email: 'sabelo@dm-mineralsgroup.com', password: '123', name: 'Sabelo Msiza', role: 'COO' },
+    { email: 'lebone@dm-mineralsgroup.com', password: '123', name: 'Lebone Marule', role: 'Finance' },
+    { email: 'doctor@dm-mineralsgroup.com', password: '123', name: 'Doctor Motswadiri', role: 'CEO' },
+    
+    // Regular Users/Requesters (Example employees)
+    { email: 'employee1@dm-mineralsgroup.com', password: '123', name: 'John Smith', role: 'Requester' },
+    { email: 'employee2@dm-mineralsgroup.com', password: '123', name: 'Sarah Johnson', role: 'Requester' },
+    { email: 'employee3@dm-mineralsgroup.com', password: '123', name: 'Michael Brown', role: 'Requester' },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,10 +34,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Simulate a brief loading state for better UX
     setTimeout(() => {
+      // Check if user exists in the predefined list
       const user = users.find(u => u.email === email && u.password === password);
       
       if (user) {
         onLogin(user.email, user.name);
+      } else if (TESTING_MODE && email.endsWith('@dm-mineralsgroup.com') && password === '123') {
+        // TESTING MODE: Allow any @dm-mineralsgroup.com email with password "123"
+        // Extract name from email (e.g., john.doe@... becomes "John Doe")
+        const namePart = email.split('@')[0];
+        const name = namePart
+          .split('.')
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(' ');
+        
+        onLogin(email, name);
       } else {
         setError('Invalid email or password. Please try again.');
       }
@@ -127,9 +147,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             {/* Info */}
             <div className="mt-8 pt-6 border-t border-white/20">
-              <p className="text-center text-sm text-white font-medium">
-                🔒 Secure access for authorized users only
-              </p>
+              {TESTING_MODE ? (
+                <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-3 mb-4">
+                  <p className="text-center text-sm text-yellow-500 font-bold">
+                    ⚠️ TESTING MODE ACTIVE
+                  </p>
+                  <p className="text-center text-xs text-yellow-500/70 mt-1">
+                    Any @dm-mineralsgroup.com email can login with password: 123
+                  </p>
+                </div>
+              ) : (
+                <p className="text-center text-sm text-white font-medium">
+                  🔒 Secure access for authorized users only
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -3,14 +3,14 @@ version: '3.8'
 services:
   procurement-app:
     build: .
-    container_name: procurement-app-standalone
+    container_name: dm-minerals-procurement
     ports:
-      - "8080:80"
+      - "3050:80"
     restart: unless-stopped
     networks:
-      - procurement-network
+      - dm-procurement-net
 
 networks:
-  procurement-network:
+  dm-procurement-net:
     driver: bridge
-    name: procurement-app-network
+    name: dm-procurement-network

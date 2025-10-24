@@ -8,20 +8,40 @@ export interface Attachment {
   fileSize: number;
 }
 
+export interface LineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
 export type ApprovalStatus = 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+
+export interface ApprovalStep {
+  id: string;
+  approverRole: 'Finance' | 'COO' | 'CFO' | 'CEO';
+  approverName?: string;
+  approverEmail?: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  comments?: string;
+  approvedAt?: Date;
+  order: number;
+}
 
 export interface Requisition {
   id: string;
   title: string;
   requester: string;
+  requesterEmail?: string;
   department: string;
   dateRequested: Date;
   justification: string;
-  itemDescription: string;
-  quantity: number;
-  unitPrice: number;
+  lineItems: LineItem[];
   totalAmount: number;
   approvalStatus: ApprovalStatus;
+  approvalSteps?: ApprovalStep[];
+  currentApprovalStep?: number;
   poNumber?: string;
   poIssuedDate?: Date;
   invoiceNumber?: string;

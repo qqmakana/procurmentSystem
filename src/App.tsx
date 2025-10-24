@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Requisition } from './types';
+import Dashboard from './components/Dashboard';
 import TabDetails from './components/TabDetails';
+import ApprovalWorkflow from './components/ApprovalWorkflow';
 import TabPO from './components/TabPO';
 import TabInvoice from './components/TabInvoice';
 import TabDocuments from './components/TabDocuments';
@@ -9,7 +11,7 @@ import Login from './components/Login';
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ email: string; name: string } | null>(null);
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [requisition, setRequisition] = useState<Requisition>(() => {
     // Initialize with default values
     const now = new Date();
@@ -20,9 +22,7 @@ const App: React.FC = () => {
       department: '',
       dateRequested: now,
       justification: '',
-      itemDescription: '',
-      quantity: 1,
-      unitPrice: 0,
+      lineItems: [],
       totalAmount: 0,
       approvalStatus: 'Draft',
       attachments: [],
@@ -142,9 +142,7 @@ const App: React.FC = () => {
         department: '',
         dateRequested: now,
         justification: '',
-        itemDescription: '',
-        quantity: 1,
-        unitPrice: 0,
+        lineItems: [],
         totalAmount: 0,
         approvalStatus: 'Draft',
         attachments: [],
@@ -154,14 +152,29 @@ const App: React.FC = () => {
     }
   };
 
+  // Check if user is an approver or admin
+  const isApprover = () => {
+    if (!currentUser?.email) return false;
+    const approverEmails = [
+      'solarcouple@gmail.com', // Admin
+      'lebone@dm-mineralsgroup.com', // Finance
+      'sabelo@dm-mineralsgroup.com', // COO
+      'joan@dm-mineralsgroup.com', // CFO
+      'doctor@dm-mineralsgroup.com', // CEO
+    ];
+    return approverEmails.includes(currentUser.email);
+  };
+
   const tabs = [
-    { id: 'details', label: '📝 Details', component: TabDetails },
-    { id: 'po', label: '📄 PO Entry', component: TabPO, condition: requisition.approvalStatus === 'Approved' },
-    { id: 'invoice', label: '💵 Invoice', component: TabInvoice, condition: requisition.approvalStatus === 'Approved' },
-    { id: 'documents', label: '📎 Documents', component: TabDocuments },
+    { id: 'dashboard', label: '🏠 Dashboard', component: Dashboard, condition: true },
+    { id: 'details', label: '📝 Create Requisition', component: TabDetails, condition: true },
+    { id: 'approval', label: '✓ Approvals', component: ApprovalWorkflow, condition: requisition.approvalStatus !== 'Draft' },
+    { id: 'po', label: '📄 PO Entry', component: TabPO, condition: requisition.approvalStatus === 'Approved' && isApprover() },
+    { id: 'invoice', label: '💵 Invoice', component: TabInvoice, condition: requisition.approvalStatus === 'Approved' && isApprover() },
+    { id: 'documents', label: '📎 Documents', component: TabDocuments, condition: true },
   ];
 
-  const visibleTabs = tabs.filter(tab => !tab.condition || tab.condition);
+  const visibleTabs = tabs.filter(tab => tab.condition);
 
   const getStatusBadge = (status: string) => {
     const statusClasses = {
@@ -264,6 +277,7 @@ const App: React.FC = () => {
             {visibleTabs.map((tab) => (
               <button
                 key={tab.id}
+                data-tab={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`tab-button ${
                   activeTab === tab.id ? 'tab-button-active' : 'tab-button-inactive'
@@ -279,17 +293,47 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="animate-fadeIn">
-          {visibleTabs.map((tab) => {
-            return (
-              activeTab === tab.id && (
-                <tab.component
-                  key={tab.id}
-                  requisition={requisition}
-                  updateRequisition={updateRequisition}
-                />
-              )
-            );
-          })}
+          {activeTab === 'dashboard' && (
+            <Dashboard
+              requisition={requisition}
+              currentUserEmail={currentUser?.email || ''}
+              currentUserName={currentUser?.name || ''}
+            />
+          )}
+          {activeTab === 'details' && (
+            <TabDetails
+              requisition={requisition}
+              updateRequisition={updateRequisition}
+              currentUserEmail={currentUser?.email}
+              currentUserName={currentUser?.name}
+            />
+          )}
+          {activeTab === 'approval' && (
+            <ApprovalWorkflow
+              requisition={requisition}
+              updateRequisition={updateRequisition}
+              currentUserEmail={currentUser?.email || ''}
+              currentUserName={currentUser?.name || ''}
+            />
+          )}
+          {activeTab === 'po' && (
+            <TabPO
+              requisition={requisition}
+              updateRequisition={updateRequisition}
+            />
+          )}
+          {activeTab === 'invoice' && (
+            <TabInvoice
+              requisition={requisition}
+              updateRequisition={updateRequisition}
+            />
+          )}
+          {activeTab === 'documents' && (
+            <TabDocuments
+              requisition={requisition}
+              updateRequisition={updateRequisition}
+            />
+          )}
         </div>
       </main>
 
