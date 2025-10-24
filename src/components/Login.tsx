@@ -11,9 +11,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const users = [
+    { email: 'solarcouple@gmail.com', password: '123', name: 'Solar Couple' },
     { email: 'joan@dm-mineralsgroup.com', password: '123', name: 'Joan Rinomhota' },
     { email: 'sabelo@dm-mineralsgroup.com', password: '123', name: 'Sabelo Msiza' },
     { email: 'lebone@dm-mineralsgroup.com', password: '123', name: 'Lebone Marule' },
+    { email: 'doctor@dm-mineralsgroup.com', password: '123', name: 'Doctor Motswadiri' },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
