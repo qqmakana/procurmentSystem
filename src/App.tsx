@@ -4,8 +4,11 @@ import TabDetails from './components/TabDetails';
 import TabPO from './components/TabPO';
 import TabInvoice from './components/TabInvoice';
 import TabDocuments from './components/TabDocuments';
+import Login from './components/Login';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ email: string; name: string } | null>(null);
   const [activeTab, setActiveTab] = useState('details');
   const [requisition, setRequisition] = useState<Requisition>(() => {
     // Initialize with default values
@@ -27,6 +30,20 @@ const App: React.FC = () => {
       updatedAt: now,
     };
   });
+
+  // Check authentication on mount
+  useEffect(() => {
+    const authData = localStorage.getItem('procurement-auth');
+    if (authData) {
+      try {
+        const { email, name } = JSON.parse(authData);
+        setCurrentUser({ email, name });
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error loading auth data:', error);
+      }
+    }
+  }, []);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -54,6 +71,21 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('procurement-requisition', JSON.stringify(requisition));
   }, [requisition]);
+
+  const handleLogin = (email: string, name: string) => {
+    const authData = { email, name };
+    localStorage.setItem('procurement-auth', JSON.stringify(authData));
+    setCurrentUser(authData);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    if (confirm('Are you sure you want to log out?')) {
+      localStorage.removeItem('procurement-auth');
+      setCurrentUser(null);
+      setIsAuthenticated(false);
+    }
+  };
 
   const updateRequisition = (updates: Partial<Requisition>) => {
     setRequisition(prev => ({
@@ -141,6 +173,11 @@ const App: React.FC = () => {
     return statusClasses[status as keyof typeof statusClasses] || 'status-badge status-draft';
   };
 
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -163,6 +200,10 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm text-white font-medium">Logged in as</div>
+                <div className="font-bold text-white">{currentUser?.name}</div>
+              </div>
               <div className="text-right">
                 <div className="text-sm text-white font-medium">Requisition ID</div>
                 <div className="font-mono font-bold text-white">{requisition.id}</div>
@@ -200,6 +241,15 @@ const App: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   <span>Reset</span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="btn-secondary text-sm flex items-center space-x-2 border-2 border-white"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
                 </button>
               </div>
             </div>

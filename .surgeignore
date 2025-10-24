@@ -1,0 +1,17 @@
+node_modules
+src
+.git
+.gitignore
+README.md
+package.json
+package-lock.json
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+Dockerfile
+docker-compose.yml
+nginx.conf
+
+
