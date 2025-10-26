@@ -136,6 +136,144 @@ docker rm procurement-app-standalone
 - Safari 14+
 - Edge 90+
 
+## 🎉 Latest Features (October 2024)
+
+### 1. **Professional Line Items System**
+- Add multiple line items to each requisition
+- Professional table layout with inline editing
+- Manual entry (no up/down spinner arrows)
+- Auto-calculates totals in South African Rands (R)
+- Delete individual items
+- Clean, modern UI
+
+### 2. **Sequential Approval Workflow**
+- **4-step approval process:** Finance → COO → CFO → CEO
+- Each approver must approve in order
+- Visual progress tracking
+- **No self-approval:** Users cannot approve their own requisitions
+- Comments on each approval step
+- Timestamps for all approvals
+
+### 3. **Dashboard with Real-Time Notifications**
+- **For Approvers:** Yellow "⚠️ ACTION REQUIRED" alert when requisitions need approval
+- **For Requesters:** Real-time progress bar showing approval status
+- Quick action buttons for common tasks
+- Shows exactly which approver currently has the requisition
+
+### 4. **Testing Mode** ⚠️
+- **Currently Active:** Any email ending with `@dm-mineralsgroup.com` can login
+- **Password:** `123` (for testing only)
+- Auto-generates names from email addresses
+- Perfect for testing with entire team
+- **See:** `TESTING-MODE-GUIDE.md` for details
+
+### 5. **Role-Based Access Control**
+- **Approvers Only:** Access to PO and Invoice tabs (after full approval)
+- **Requesters:** Can create and track requisitions
+- **Admin:** Full system access
+- Smart permission system
+
+---
+
+## 🔐 Authentication & Login
+
+### Current Users (5 Approvers):
+1. `solarcouple@gmail.com` - Solar Couple (Admin)
+2. `lebone@dm-mineralsgroup.com` - Lebone Marule (Finance)
+3. `sabelo@dm-mineralsgroup.com` - Sabelo Msiza (COO)
+4. `joan@dm-mineralsgroup.com` - Joan Rinomhota (CFO)
+5. `doctor@dm-mineralsgroup.com` - Doctor Motswadiri (CEO)
+
+**All passwords:** `123` (change for production!)
+
+### Testing Mode (Active):
+**Any @dm-mineralsgroup.com email can login with password `123`**
+
+Examples that work:
+- `john.smith@dm-mineralsgroup.com` / `123`
+- `sarah.jones@dm-mineralsgroup.com` / `123`
+- `test.user@dm-mineralsgroup.com` / `123`
+
+### GitHub Authentication (For Pushing Code):
+
+**Device Code Authentication (Use Your Phone):**
+
+When you need to push code from this Mac without storing credentials:
+
+```bash
+# Start device code authentication
+gh auth login --web --git-protocol https
+
+# You'll get a code like: F14E-7484
+# On your phone, go to: https://github.com/login/device
+# Enter the code and authenticate
+# Then push your changes
+git push origin main
+```
+
+**Benefits:**
+- ✅ No password stored on work MacBook
+- ✅ Authenticate from your phone
+- ✅ One-time session
+- ✅ Secure for work computers
+
+---
+
+## 📦 Latest Updates
+
+### What's Been Added:
+1. ✅ Complete Line Items System
+2. ✅ Sequential Approval (Finance → COO → CFO → CEO)
+3. ✅ Dashboard with Notifications
+4. ✅ No Self-Approval Protection
+5. ✅ Currency changed to Rands (R)
+6. ✅ Testing Mode for easy team testing
+7. ✅ Professional UI improvements
+
+### Documentation Files:
+- `TESTING-MODE-GUIDE.md` - How testing mode works and how to disable it
+- `USER-ONBOARDING-GUIDE.md` - How to add new users securely
+- `DEPLOY-NOW.md` - Deployment options and instructions
+- `PASSWORD-RESET-GUIDE.md` - How to manage user passwords
+
+---
+
+## 🌍 Deployment
+
+### Current Deployments:
+- ✅ **Netlify:** Deployed and working worldwide
+- ✅ **Docker:** Running on port 3050
+- ✅ **GitHub:** Code repository at https://github.com/qqmakana/procurmentSystem
+
+### Deployment Options:
+See `DEPLOY-NOW.md` for complete deployment instructions including:
+- Netlify Drop (easiest)
+- Render.com
+- Vercel
+- Docker
+- GitHub Pages
+
+---
+
+## 🔒 Security Notes
+
+### Current (Testing Mode):
+- ⚠️ Testing mode is **ACTIVE**
+- ⚠️ Passwords stored in plain text
+- ⚠️ Default password is `123`
+- **For testing only - NOT production ready**
+
+### Before Production:
+1. Set `TESTING_MODE = false` in `src/components/Login.tsx`
+2. Change all passwords from `123` to strong passwords
+3. Add all real users to the user list
+4. Implement password hashing
+5. Set up proper backend authentication
+
+See `USER-ONBOARDING-GUIDE.md` for production security checklist.
+
+---
+
 ## License
 
 MIT License - feel free to use and modify as needed.
